@@ -1,0 +1,197 @@
+<div class="min-h-screen bg-gray-50 p-8 relative">
+    <!-- Countdown Timer -->
+    <div *ngIf="countdownState !== 'finished' && !loading && formation && countdownText !== ''" [ngClass]="{
+             'bg-gradient-to-tr from-green-600 to-green-400 shadow-green-100': countdownState === 'upcoming',
+             'bg-gradient-to-r from-red-400 to-pink-500': countdownState === 'ongoing'
+         }"
+        class="fixed top-6 right-6 text-white p-4 rounded-full shadow-md flex items-center space-x-3 animate-fade-in duration-700">
+        <svg class="w-6 h-6 animate-pulse" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"
+            xmlns="http://www.w3.org/2000/svg">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+        </svg>
+        <span class="text-sm font-medium">
+            {{ countdownState === 'upcoming' ? ('Commence dans ' + countdownText) : ('Termine dans ' + countdownText) }}
+        </span>
+    </div>
+
+    <!-- Loading State -->
+    <div *ngIf="loading" class="flex justify-center items-center h-screen">
+        <div class="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
+    </div>
+
+    <!-- Error State -->
+    <div *ngIf="error" class="p-4 max-w-4xl mx-auto">
+        <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative" role="alert">
+            <strong class="font-bold">Erreur!</strong>
+            <span class="block sm:inline">{{ error }}</span>
+        </div>
+    </div>
+
+    <!-- Formation Data -->
+    <div *ngIf="formation && !loading" class="max-w-4xl mx-auto space-y-8">
+        <!-- Header -->
+        <div class="bg-white rounded-lg shadow-md p-6">
+            <div class="flex items-center justify-between mb-4">
+                <div class="flex items-center gap-2">
+                    <span class="text-gray-500 font-medium text-lg">Titre: </span>
+                    <span class="text-xl font-extrabold text-gray-700 inline uppercase">{{ formation.title }}</span>
+                </div>
+                <span class="px-4 py-1 bg-blue-100 text-blue-800 rounded-full text-sm">
+                    {{ formation.category }}
+                </span>
+            </div>
+            <div class="mb-4">
+                <span class="text-gray-500 font-medium text-md">Description: </span>
+                <p class="text-gray-600 text-base inline">{{ formation.description }}</p>
+            </div>
+            <div>
+                <span class="text-gray-500 font-medium text-md">Contenu: </span>
+                <div class="prose max-w-none inline text-gray-600 text-base" [innerHTML]="formation.content"></div>
+            </div>
+
+
+        </div>
+
+        <!-- Modules -->
+        <div class="bg-white rounded-lg shadow-md p-6">
+            <h2 class="text-2xl font-bold text-gray-900 mb-4">Modules de Formation</h2>
+
+            <!-- Liste des modules -->
+            <div class="space-y-4 mb-6">
+                <div *ngFor="let module of formation.modules; let i = index"
+                    class="p-4 border rounded-lg flex justify-between items-center"
+                    [ngClass]="{'bg-gray-100': !module.isAccessible, 'bg-white': module.isAccessible}">
+                    <div class="flex items-center">
+                        <div class="w-8 h-8 rounded-full flex items-center justify-center mr-3"
+                            [ngClass]="{'bg-indigo-100 text-indigo-600': i === 0, 'bg-gray-200 text-gray-600': i !== 0}">
+                            {{ i + 1 }}
+                        </div>
+                        <div>
+                            <h3 class="font-semibold text-gray-800">{{ module.title }}</h3>
+                            <p class="text-sm text-gray-600">{{ module.description }}</p>
+                        </div>
+                    </div>
+                    <div>
+                        <i *ngIf="module.isAccessible" class="fas fa-unlock text-green-500"></i>
+                        <i *ngIf="!module.isAccessible" class="fas fa-lock text-gray-400"></i>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Statut de la formation pour l'utilisateur -->
+            <div class="p-5 rounded-lg border" [ngClass]="{
+                    'bg-green-50 border-green-200': hasPassedFormation(),
+                    'bg-amber-50 border-amber-200': hasAttemptedFormation() && !hasPassedFormation(),
+                    'bg-indigo-50 border-indigo-200': !hasAttemptedFormation() && hasAvailableSessions(),
+                    'bg-slate-50 border-slate-200': !hasAttemptedFormation() && !hasAvailableSessions()
+                }">
+                <div class="flex items-start">
+                    <div class="flex-shrink-0 mt-0.5">
+                        <i class="text-2xl" [ngClass]="{
+                                'fas fa-trophy text-green-500': hasPassedFormation(),
+                                'fas fa-hourglass-half text-amber-500': hasAttemptedFormation() && !hasPassedFormation(),
+                                'fas fa-graduation-cap text-indigo-500': !hasAttemptedFormation() && hasAvailableSessions(),
+                                'fas fa-calendar-alt text-slate-500': !hasAttemptedFormation() && !hasAvailableSessions()
+                            }"></i>
+                    </div>
+                    <div class="ml-4">
+                        <!-- Formation réussie -->
+                        <div *ngIf="hasPassedFormation()">
+                            <h3 class="text-lg font-medium text-green-800">Formation complétée avec succès</h3>
+                            <div class="mt-2 text-sm text-green-700">
+                                <p>Félicitations ! Vous avez complété cette formation avec succès. Vous pouvez consulter
+                                    votre certificat dans la section "Certifications".</p>
+                            </div>
+                        </div>
+
+                        <!-- Formation en cours (tentative échouée) -->
+                        <div *ngIf="hasAttemptedFormation() && !hasPassedFormation()">
+                            <h3 class="text-lg font-medium text-amber-800">Formation en cours</h3>
+                            <div class="mt-2 text-sm text-amber-700">
+                                <p>Vous avez commencé cette formation mais ne l'avez pas encore terminée.
+                                    {{ hasAvailableSessions() ? 'Cliquez sur "Continuer la formation" pour reprendre ou
+                                    vous vous êtes arrêté .' :
+                                    'Attendez une nouvelle session pour repasser le test.' }}</p>
+                            </div>
+                        </div>
+
+                        <!-- Sessions disponibles (pas encore de tentative) -->
+                        <div *ngIf="!hasAttemptedFormation() && hasAvailableSessions()">
+                            <h3 class="text-lg font-medium text-indigo-800">Prêt à commencer</h3>
+                            <div class="mt-2 text-sm text-indigo-700">
+                                <p>Vous pouvez commencer cette formation dès maintenant. Cliquez sur le bouton
+                                    "Commencer la formation" pour accéder au contenu des modules.</p>
+                            </div>
+                        </div>
+
+                        <!-- Pas de sessions disponibles (pas encore de tentative) -->
+                        <div *ngIf="!hasAttemptedFormation() && !hasAvailableSessions()">
+                            <h3 class="text-lg font-medium text-slate-800">Aucune session disponible</h3>
+                            <div class="mt-2 text-sm text-slate-700">
+                                <!-- Vérifier si toutes les sessions sont terminées -->
+                                <p *ngIf="areAllSessionsEnded()">
+                                    <i class="fas fa-calendar-times mr-1"></i>
+                                    Toutes les sessions de cette formation sont terminées. Veuillez attendre de
+                                    nouvelles sessions.
+                                </p>
+
+                                <!-- Vérifier si toutes les sessions n'ont pas encore commencé -->
+                                <p *ngIf="areAllSessionsNotStarted()">
+                                    <i class="fas fa-calendar-day mr-1"></i>
+                                    Les sessions de cette formation n'ont pas encore commencé. Veuillez revenir
+                                    ultérieurement.
+                                </p>
+
+                                <!-- Cas par défaut -->
+                                <p *ngIf="!areAllSessionsEnded() && !areAllSessionsNotStarted()">
+                                    <i class="fas fa-info-circle mr-1"></i>
+                                    Il n'y a actuellement aucune session disponible pour cette formation. Veuillez
+                                    vérifier ultérieurement.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Bouton pour commencer ou continuer la formation -->
+            <div *ngIf="!hasPassedFormation() && hasAvailableSessions()" class="mt-6 flex justify-center space-x-4">
+                <button (click)="startFormation()"
+                    class="px-6 py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg font-medium flex items-center transition-colors shadow-md">
+                    <i class="fas fa-play-circle mr-2"></i>
+                    <span>{{ hasAttemptedFormation() ? 'Continuer la formation' : 'Commencer la formation' }}</span>
+                </button>
+
+                <!-- Bouton pour passer directement le quiz final si autorisé -->
+                <button *ngIf="canTakeFinalQuiz() && formation && formation.quizId " (click)="goToFinalQuiz()"
+                    class="px-6 py-3 bg-green-600 hover:bg-green-700 text-white rounded-lg font-medium flex items-center transition-colors shadow-md">
+                    <i class="fas fa-check-circle mr-2"></i>
+                    <span>Passer le quiz final</span>
+                </button>
+            </div>
+
+            <!-- Message si aucun module -->
+            <div *ngIf="formation && formation.modules && formation.modules.length === 0" class="flex mt-4">
+                <div class="w-full relative group border rounded-lg p-4 bg-red-50 border-red-200">
+                    <div class="flex items-center space-x-3">
+                        <i class="fas fa-exclamation-circle text-red-500 text-2xl"></i>
+                        <div>
+                            <p class="font-medium text-gray-700">
+                                Aucun Module
+                            </p>
+                            <p class="text-sm text-gray-500">Cette formation ne contient aucun module pour le moment.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Feedbacks -->
+        <div class="bg-white rounded-lg shadow-md p-6">
+            <h2 class="text-2xl font-bold text-gray-900 mb-4">Évaluations</h2>
+            <app-formation-feedbacks *ngIf="formation" [formationId]="formation.id"
+                [canDelete]="false"></app-formation-feedbacks>
+        </div>
+    </div>
+</div>

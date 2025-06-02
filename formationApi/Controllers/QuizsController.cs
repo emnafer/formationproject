@@ -60,8 +60,11 @@ namespace formationApi.Controllers
         [HttpGet]
         public async Task<IActionResult> GetAllQuizzes()
         {
-            var quizzes = await _repositoryWrapper.Quiz.GetAll();
-            return Ok(quizzes.ToDtoList());
+            var quizzes = await _repositoryWrapper.Quiz
+                .GetAllAsQueryable()
+                .Where(q => q.Enable)
+                .ToListAsync();
+            return Ok(quizzes);
         }
 
         [HttpGet("{id:int}")]
@@ -600,5 +603,149 @@ namespace formationApi.Controllers
                 FormationId = formation?.Id
             });
         }
+
+        [HttpDelete("{quizId:int}")]
+        [Authorize(Roles = "Administrator")]
+        public async Task<IActionResult> Delete(int quizId)
+        {
+            try
+            {
+                await _repositoryWrapper.Quiz.Delete(quizId);
+                return Ok("Quiz supprimee avec success");
+            }
+            catch (Exception e)
+            {
+                return BadRequest(e.Message);
+            }
+
+        }
+        /// <summary>
+        /// Updates an existing quiz
+        /// </summary>
+        /// <param name="quizId">ID of the quiz to update</param>
+        /// <param name="updateQuizDto">Updated quiz data</param>
+        /// <returns>Updated quiz information</returns>
+        [HttpPut("{quizId:int}")]
+        [Authorize(Roles = "Administrator")]
+        public async Task<IActionResult> UpdateQuiz(int quizId, [FromBody] UpdateQuizDto updateQuizDto)
+        {
+            try
+            {
+                // Retrieve the existing quiz with its questions and answers
+                var existingQuiz = await _repositoryWrapper.Quiz.GetAllAsQueryable()
+                    .Include(q => q.Questions)
+                    .ThenInclude(q => q.Answers)
+                    .FirstOrDefaultAsync(q => q.Id == quizId);
+
+                if (existingQuiz == null)
+                {
+                    return NotFound("Quiz not found");
+                }
+
+                // Update quiz title
+                existingQuiz.Title = updateQuizDto.Title;
+
+                // Update modified date
+                existingQuiz.UpdatedAt = DateTime.UtcNow;
+
+                // Handle questions
+                // First, mark existing questions as disabled if they're not in the update
+                foreach (var existingQuestion in existingQuiz.Questions)
+                {
+                    existingQuestion.Enable = false;
+                    foreach (var answer in existingQuestion.Answers)
+                    {
+                        answer.Enable = false;
+                    }
+                }
+
+                // Process updated/new questions
+                foreach (var questionDto in updateQuizDto.Questions)
+                {
+                    var question = existingQuiz.Questions.FirstOrDefault(q => q.Id == questionDto.Id && q.Id != 0);
+
+                    if (question == null)
+                    {
+                        // New question
+                        question = new Question
+                        {
+                            QuizId = quizId,
+                            CreatedAt = DateTime.UtcNow,
+                            Enable = true
+                        };
+                        existingQuiz.Questions.Add(question);
+                    }
+                    else
+                    {
+                        // Existing question
+                        question.Enable = true;
+                        question.UpdatedAt = DateTime.UtcNow;
+                    }
+
+                    question.Title = questionDto.Title;
+                    question.Points = questionDto.Points;
+
+                    // Handle answers
+                    foreach (var answerDto in questionDto.Answers)
+                    {
+                        var answer = question.Answers.FirstOrDefault(a => a.Id == answerDto.Id && a.Id != 0);
+
+                        if (answer == null)
+                        {
+                            // New answer
+                            answer = new Answer
+                            {
+                                QuestionId = question.Id,
+                                CreatedAt = DateTime.UtcNow,
+                                Enable = true
+                            };
+                            question.Answers.Add(answer);
+                        }
+                        else
+                        {
+                            // Existing answer
+                            answer.Enable = true;
+                            answer.UpdatedAt = DateTime.UtcNow;
+                        }
+
+                        answer.Text = answerDto.Text;
+                        answer.IsCorrect = answerDto.IsCorrect;
+                    }
+                }
+
+                // Update the quiz in the repository
+                await _repositoryWrapper.Quiz.Update(existingQuiz);
+
+                // Return the updated quiz
+                return Ok(existingQuiz.ToDto());
+            }
+            catch (Exception ex)
+            {
+                return BadRequest($"Failed to update quiz: {ex.Message}");
+            }
+        }
+
+
+        public class UpdateQuizDto
+        {
+            public string Title { get; set; }
+            public List<UpdateQuestionDto> Questions { get; set; } = new List<UpdateQuestionDto>();
+        }
+
+        public class UpdateQuestionDto
+        {
+            public int Id { get; set; } // 0 for new questions
+            public string Title { get; set; }
+            public int Points { get; set; }
+            public List<UpdateAnswerDto> Answers { get; set; } = new List<UpdateAnswerDto>();
+        }
+
+        public class UpdateAnswerDto
+        {
+            public int Id { get; set; } // 0 for new answers
+            public string Text { get; set; }
+            public bool IsCorrect { get; set; }
+        }
     }
+
 }

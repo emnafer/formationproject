@@ -82,6 +82,12 @@ export class QuizsComponent implements OnInit {
   }
 
   deleteQuiz(quiz: Quiz): void {
-    // TODO: Implement delete functionality
+    if (confirm("Voulezs supprimer ce quiz ?")) {
+      this.quizService.deleteQuiz(quiz.id).subscribe({
+        next:()=>{
+          this.fetchQuizzs()
+        }
+      })
+     }
   }
 }

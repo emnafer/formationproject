@@ -15,7 +15,6 @@ import { QuizsComponent } from './quiz/quizs/quizs.component';
 import { CreateQuizsComponent } from './quiz/create-quizs/create-quizs.component';
 import { QuizDetailsComponent } from './quiz/quiz-details/quiz-details.component';
 import { UpdateQuizsComponent } from './quiz/update-quizs/update-quizs.component';
-import { CreateFormationComponent } from './formation/create-formation/create-formation.component';
 import { UpdateFormationComponent } from './formation/update-formation/update-formation.component';
 import { FormationDetailComponent } from './formation/formation-detail/formation-detail.component';
 import { AdminCertificationListComponent } from './certification/certification-list/certification-list.component';
@@ -29,7 +28,6 @@ import { SettingsComponent } from '../shared/settings/settings.component';
     EmployeesComponent,
     SessionComponent,
     TestComponent,
-    CreateFormationComponent,
     QuizsComponent,
     CreateQuizsComponent,
     QuizDetailsComponent,

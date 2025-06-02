@@ -11,17 +11,16 @@ import { UpdateQuizsComponent } from './quiz/update-quizs/update-quizs.component
 import { UpdateFormationComponent } from './formation/update-formation/update-formation.component';
 import { QuizPassingComponent } from '../condidat/quiz/quiz-passing/quiz-passing.component';
 import { FormationDetailComponent } from './formation/formation-detail/formation-detail.component';
-import { CreateFormationComponent } from './formation/create-formation/create-formation.component';
 import { AdminCertificationListComponent } from './certification/certification-list/certification-list.component';
 import { CertificationDetailsComponent } from '../shared/certification-details/certification-details.component';
 import { SettingsComponent } from '../shared/settings/settings.component';
-
+import { CreateFormationComponent } from './formation/create-formation/create-formation.component';
 const routes: Routes = [
   { path: "", component: HomeComponent },
   { path: "formations", component: TrainingComponent },
-  { path: "formations/create", component: CreateFormationComponent },
   { path: "formations/:id", component: FormationDetailComponent },
   { path: "formations/edit/:id", component: UpdateFormationComponent },
+  { path: "formations/create", component: CreateFormationComponent },
   { path: "employees", component: EmployeesComponent },
   { path: "sessions", component: SessionComponent },
   { path: "settings", component: SettingsComponent },

@@ -1,6 +1,7 @@
-import { Component, ElementRef, OnInit, ViewChild } from '@angular/core';
+import { Component, ElementRef, OnInit, ViewChild, inject } from '@angular/core';
 import { DashboardData, DashboardService } from 'src/app/core/services/dashboard.service';
 import { Chart, registerables } from 'chart.js';
+import { AuthService } from 'src/app/core/services/auth.service';
 
 // Enregistrer tous les composants de Chart.js
 Chart.register(...registerables);
@@ -19,6 +20,8 @@ export class HomeComponent implements OnInit {
   dashboardData!: DashboardData;
   loading = true;
   error = false;
+
+  auth = inject(AuthService)
 
   // Références aux graphiques
   categoryChart!: Chart;

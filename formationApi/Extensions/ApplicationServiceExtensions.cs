@@ -16,7 +16,9 @@ namespace formationApi.Extensions
         {
             services.AddDbContext<ApplicationContext>(options =>
                 options.UseNpgsql(config.GetConnectionString("DefaultConnection")));
-
+            // UseNpgsql : pour connecter a postgresql base de donnees
+            // UseSqlServer : pour connecter a sql server base de donnees
+            // UseMySql : pour connecter a mysql base de donnees
 
 
             services.AddScoped<ITokenService, TokenService>();
